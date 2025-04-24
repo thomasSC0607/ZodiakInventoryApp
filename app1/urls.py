@@ -1,4 +1,5 @@
 from django.urls import path
+from . import views
 from django.shortcuts import render
 from .views import login_view, landing_view, logout_view, categorias_view
 
@@ -19,4 +20,14 @@ urlpatterns = [
     path("categorias/casual_hombre/", lambda r: render(r, "categories/casual_hombre.html"), name="casual_hombre"),
     path("categorias/apache_mujer/", lambda r: render(r, "categories/apache_mujer.html"), name="apache_mujer"),
     path("categorias/bota_mujer/", lambda r: render(r, "categories/bota_mujer.html"), name="bota_mujer"),
+
+
+    path("zapatos/amaka_hombre/", views.amaka_hombre_view, name="amaka_hombre"),
+    path("zapatos/apache_hombre/", views.apache_hombre_view, name="apache_hombre"),
+    path("zapatos/apolo_hombre/", views.apolo_hombre_view, name="apolo_hombre"),
+    path("zapatos/bota_hombre/", views.bota_hombre_view, name="bota_hombre"),
+    path("zapatos/casual_hombre/", views.casual_hombre_view, name="casual_hombre"),
+    path("zapatos/nautico_hombre/", views.nautico_hombre_view, name="nautico_hombre"),
+    path("zapatos/apache_mujer/", views.apache_mujer_view, name="apache_mujer"),
+    path("zapatos/bota_mujer/", views.bota_mujer_view, name="bota_mujer"),
 ]

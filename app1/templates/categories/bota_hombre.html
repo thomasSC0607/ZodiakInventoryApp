@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        {% for zapato in zapatos %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="{% static zapato.imagen %}" class="card-img-top" alt="{{ zapato.nombre }}" style="height: 250px; object-fit: cover;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ zapato.nombre }}</h5>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
