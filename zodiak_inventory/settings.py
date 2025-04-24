@@ -75,13 +75,17 @@ WSGI_APPLICATION = "zodiak_inventory.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "zodiak_inventory_db",
-        "USER": "root",
-        "PASSWORD": "madagascar12",
-        "HOST": "localhost",
-        "PORT": "3306", 
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+
     }
+        # DB config with MySQL
+        # "ENGINE": "django.db.backends.mysql",
+        # "NAME": "zodiak_inventory_db",
+        # "USER": "root",
+        # "PASSWORD": "madagascar12",
+        # "HOST": "localhost",
+        # "PORT": "3306", 
 }
 
 
