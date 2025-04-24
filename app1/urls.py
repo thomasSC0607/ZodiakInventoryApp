@@ -1,7 +1,22 @@
 from django.urls import path
-from .views import login_view, landing_view
+from django.shortcuts import render
+from .views import login_view, landing_view, logout_view, categorias_view
 
 urlpatterns = [
-    path('', login_view, name='login'),  # Ruta para login
-    path('landing/', landing_view, name='landing'),  # Ruta para landing
+    path('', login_view, name='login'),  
+    path('landing/', landing_view, name='landing'),  
+    path('logout/', logout_view, name='logout'),  
+
+    # Página principal de categorías
+    path("categorias/", categorias_view, name="categorias"),
+
+    # Páginas individuales por categoría
+    path("categorias/apache_hombre/", lambda r: render(r, "categories/apache_hombre.html"), name="apache_hombre"),
+    path("categorias/apolo_hombre/", lambda r: render(r, "categories/apolo_hombre.html"), name="apolo_hombre"),
+    path("categorias/amaka_hombre/", lambda r: render(r, "categories/amaka_hombre.html"), name="amaka_hombre"),
+    path("categorias/nautico_hombre/", lambda r: render(r, "categories/nautico_hombre.html"), name="nautico_hombre"),
+    path("categorias/bota_hombre/", lambda r: render(r, "categories/bota_hombre.html"), name="bota_hombre"),
+    path("categorias/casual_hombre/", lambda r: render(r, "categories/casual_hombre.html"), name="casual_hombre"),
+    path("categorias/apache_mujer/", lambda r: render(r, "categories/apache_mujer.html"), name="apache_mujer"),
+    path("categorias/bota_mujer/", lambda r: render(r, "categories/bota_mujer.html"), name="bota_mujer"),
 ]
