@@ -36,17 +36,39 @@
                                 </div>
                             </form>
 
-                            <!-- Formulario para eliminar el pedido -->
+                            <!-- Formulario para eliminar el producto -->
                             <form method="POST" action="{% url 'eliminar_pedido' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="producto_id" value="{{ producto_id }}">
-                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                                <button type="submit" class="btn btn-danger">Eliminar Producto</button>
                             </form>
                         </div>
                     </div>
                 </div>
             {% endfor %}
         </div>
+
+        <!-- Botón para eliminar todo el pedido -->
+        <form method="POST" action="{% url 'eliminar_todo_pedido' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger mt-3">Eliminar Todo el Pedido</button>
+        </form>
+
+        <!-- Formulario para agregar comentario adicional -->
+        <form method="POST" action="{% url 'generar_pedido' %}">
+            {% csrf_token %}
+            <div class="form-group mt-3">
+                <label for="comentario">Comentario adicional</label>
+                <textarea name="comentario" class="form-control" rows="4"></textarea>
+            </div>
+
+            <!-- Botones de acción con separación -->
+            <div class="d-flex justify-content-between mt-4">
+                <button type="submit" class="btn btn-success">Generar Pedido</button>
+            </div>
+        </form>
+        </div>
+
     {% else %}
         <!-- Texto plano cuando no hay pedidos -->
         <p>No hay pedidos disponibles. Agrega productos al carrito.</p>

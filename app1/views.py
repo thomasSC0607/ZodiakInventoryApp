@@ -3,10 +3,12 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib import messages
-from .models import DetallePedido, Orden, Zapato
+from django.conf import settings
 from string import ascii_uppercase
 from django.http import JsonResponse
 import json
+from django.utils import timezone
+import os
 
 # Vista personalizada para errores CSRF
 def csrf_failure(request, reason=""):
@@ -181,35 +183,85 @@ def agregar_pedido(request):
         return redirect('ver_pedido')
 
 
-
+@login_required
 def generar_pedido(request):
     if request.method == 'POST':
-        # Recuperamos los datos del pedido desde la sesión
-        pedido = request.session.get('pedido', {})
+        # Obtener los productos del pedido desde la sesión (carrito de compras)
+        pedido_data = request.session.get('pedido', {})
         
-        # Si el pedido está vacío, mostramos un error
-        if not pedido:
-            messages.error(request, "No tienes productos en tu carrito.")
+        if not pedido_data:
+            messages.error(request, "No hay productos en el carrito.")
             return redirect('ver_pedido')
 
-        # Creamos el nombre del archivo JSON con un formato basado en la fecha y hora actual
-        file_name = f"pedido_{request.user.id}_{int(time.time())}.json"
-        file_path = os.path.join(settings.MEDIA_ROOT, 'pedidos', file_name)
+        # Crear una nueva orden (solo para estructura, no se guardará aún)
+        empleado = request.user  # Asumiendo que el usuario logueado es el empleado
+        comentario = request.POST.get('comentario', '') # Obtener comentarios adicionales del formulario
 
-        # Guardamos el pedido como un archivo JSON
-        with open(file_path, 'w') as json_file:
-            json.dump(pedido, json_file)
+        # Guardar el comentario en la sesión
+        request.session['comentario'] = comentario 
 
-        # Aquí podrías agregar la lógica para guardar el pedido en la base de datos de bodega y zapatos
+        # Preparar los datos para el JSON
+        orden_data = {
+            'empleado': empleado.username,
+            'fecha_creacion': timezone.now().isoformat(),
+            'estado': 'PENDIENTE',
+            'observaciones': comentario,
+            'detalles': []
+        }
 
-        # Mensaje de éxito
-        messages.success(request, "Pedido generado correctamente y guardado en JSON.")
+        # Preparar los detalles del pedido sin hacer queries
+        for producto_id, producto in pedido_data.items():
+            # Generar los IDs del zapato secuenciales
+            zapato_ids = []
+            for i in range(1, producto['cantidad'] + 1):
+                # Generamos el zapato_id secuencial, añadiendo ceros a la izquierda si es necesario
+                zapato_ids.append(f"{producto_id[:8]}{str(i).zfill(3)}")  # Ejemplo: AP36NHB001
+
+            # Unir los zapato_id en una cadena separada por comas
+            zapato_id_secuenciales = ",".join(zapato_ids)
+
+            # Crear el detalle para este producto
+            detalle = {
+                'zapato_id': zapato_id_secuenciales,  # Usamos los IDs secuenciales
+                'modelo': producto['modelo'],
+                'talla': producto['talla'],
+                'sexo': producto['sexo'],
+                'color': producto['color'],
+                'cantidad': producto['cantidad'],
+                'imagen': producto.get('imagen', '')
+            }
+
+            # Añadimos el detalle al orden
+            orden_data['detalles'].append(detalle)
+
+        # Define la ruta donde guardar el archivo JSON
+        archivos_pedidos_dir = os.path.join(settings.MEDIA_ROOT, 'archivos_pedidos')
         
-        # Limpiamos el pedido de la sesión
-        request.session['pedido'] = {}
+        # Crea la carpeta 'archivos_pedidos' si no existe
+        if not os.path.exists(archivos_pedidos_dir):
+            os.makedirs(archivos_pedidos_dir)
+
+        # Define el nombre del archivo JSON con la fecha de creación para hacerlo único
+        file_name = f"pedido_{timezone.now().strftime('%Y%m%d%H%M%S')}.json"
+        file_path = os.path.join(archivos_pedidos_dir, file_name)
+
+        # Generar el archivo JSON con los datos de la orden
+        with open(file_path, 'w') as archivo:
+            json.dump(orden_data, archivo, indent=4)
         
-        # Redirigimos al usuario a la página de pedidos generados o a donde prefieras
-        return redirect('pedidos_generados')  # Redirige a una vista donde puedas ver los pedidos generados
+        # Borrar el pedido de la sesión
+        if 'pedido' in request.session:
+            del request.session['pedido']
+
+        # Mostrar mensaje de éxito
+        messages.success(request, f"El pedido se ha generado exitosamente en formato JSON. Puedes verificarlo en: {file_path}")
+
+        # Redirigir al usuario a la vista de pedidos
+        return redirect('ver_pedido')
+    
+    # Si no es un POST, redirigir al carrito
+    return redirect('ver_pedido')
+
 
 
 
@@ -234,6 +286,18 @@ def eliminar_pedido(request):
 
     return redirect('landing')  # Si no es un POST, redirigimos a landing
 
+def eliminar_todo_pedido(request):
+    if request.method == 'POST':
+        # Borramos todo el pedido de la sesión
+        if 'pedido' in request.session:
+            del request.session['pedido']
+            messages.success(request, 'Pedido eliminado con éxito.')
+        else:
+            messages.warning(request, 'No hay pedido que eliminar.')
+
+        return redirect('ver_pedido')  # Redirigir a la vista de ver pedidos o donde prefieras
+
+    return redirect('landing')  # Redirige a una página por defecto si no es un POST
 
 def actualizar_pedido(request):
     if request.method == 'POST':

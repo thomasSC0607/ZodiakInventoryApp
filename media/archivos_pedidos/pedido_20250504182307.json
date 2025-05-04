@@ -1,0 +1,17 @@
+{
+    "empleado": "admin",
+    "fecha_creacion": "2025-05-04T18:23:07.407139+00:00",
+    "estado": "PENDIENTE",
+    "observaciones": "",
+    "detalles": [
+        {
+            "zapato_id": "AP36NHA0001",
+            "modelo": "Apache Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "cantidad": 1,
+            "imagen": "images/ApacheH1.png"
+        }
+    ]
+}

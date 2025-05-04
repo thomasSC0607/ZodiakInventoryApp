@@ -1,4 +1,6 @@
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from . import views
 from django.shortcuts import render
 from .views import login_view, landing_view, logout_view, categorias_view
@@ -13,8 +15,10 @@ urlpatterns = [
     path('agregar_pedido/', views.agregar_pedido, name='agregar_pedido'),
     path('ver_pedidos/', views.ver_pedidos, name='ver_pedido'), 
     path('eliminar_pedido/', views.eliminar_pedido, name='eliminar_pedido'),
+    path('eliminar_todo_pedido/', views.eliminar_todo_pedido, name='eliminar_todo_pedido'),
     path('actualizar_pedido/', views.actualizar_pedido, name='actualizar_pedido'),
     path('generar_pedido/', views.generar_pedido, name='generar_pedido'),
+    
     
     # Página principal de categorías
     path("categorias/", categorias_view, name="categorias"),
@@ -38,4 +42,5 @@ urlpatterns = [
     path("zapatos/nautico_hombre/", views.nautico_hombre_view, name="nautico_hombre"),
     path("zapatos/apache_mujer/", views.apache_mujer_view, name="apache_mujer"),
     path("zapatos/bota_mujer/", views.bota_mujer_view, name="bota_mujer"),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
