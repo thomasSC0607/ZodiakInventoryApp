@@ -6,8 +6,15 @@ from .views import login_view, landing_view, logout_view, categorias_view
 urlpatterns = [
     path('', login_view, name='login'),  
     path('landing/', landing_view, name='landing'),  
-    path('logout/', logout_view, name='logout'),  
-
+    path('logout/', logout_view, name='logout'), 
+    
+    #Pagina para pedidos
+    
+    path('agregar_pedido/', views.agregar_pedido, name='agregar_pedido'),
+    path('ver_pedidos/', views.ver_pedidos, name='ver_pedido'), 
+    path('eliminar_pedido/', views.eliminar_pedido, name='eliminar_pedido'),
+    path('actualizar_pedido/', views.actualizar_pedido, name='actualizar_pedido'),
+    
     # Página principal de categorías
     path("categorias/", categorias_view, name="categorias"),
 
