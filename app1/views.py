@@ -4,6 +4,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib import messages
 from .models import DetallePedido, Orden, Zapato
+from string import ascii_uppercase
+from django.http import JsonResponse
+import json
 
 # Vista personalizada para errores CSRF
 def csrf_failure(request, reason=""):
@@ -67,27 +70,26 @@ def categorias_view(request):
     return render(request, 'categorias.html', {"categorias": categorias})
 
 # Vista genérica que renderiza los modelos de zapatos según el nombre y sexo
+# Vista genérica para modelos
 def categoria_view(request, nombre_modelo, sexo_abreviado):
-    # Determina el texto completo del sexo (Hombre o Mujer)
     sexo = 'Hombre' if sexo_abreviado == 'H' else 'Mujer'
-    
-    # Sufijo usado para construir el nombre de la imagen (ej. "ApacheH1.png")
     sufijo = 'H' if sexo_abreviado == 'H' else 'M'
 
-    # Crea la lista de 5 zapatos con nombre e imagen
+    # Lista de zapatos con nombre e imagen
     zapatos = [
         {"nombre": f"{nombre_modelo} {sexo}", "imagen": f"images/{nombre_modelo}{sufijo}{i}.png"}
         for i in range(1, 6)
     ]
 
-    # Renderiza la plantilla correspondiente, pasando zapatos, colores, tallas y sexo al contexto
+    # Letras para distinguir cada zapato visualmente (A, B, C, ...)
+    letras = list(ascii_uppercase[:len(zapatos)])  # ['A', 'B', 'C', 'D', 'E']
+
     return render(request, f"categories/{nombre_modelo.lower()}_{sexo.lower()}.html", {
-        "zapatos": zapatos,
+        "zapatos_con_letras": zip(zapatos, letras),
         "colores": COLORES,
         "tallas": TALLAS,
         "sexo": sexo
     })
-
 # ----------------------------
 # Vistas específicas que llaman la función genérica con los parámetros adecuados
 # ----------------------------
@@ -120,6 +122,7 @@ def bota_mujer_view(request):
 
 
 def ver_pedidos(request):
+    # Recuperamos los datos del pedido de la sesión
     pedido = request.session.get('pedido', {})
     return render(request, 'ver_pedidos.html', {'pedido': pedido})
 
@@ -133,14 +136,17 @@ def agregar_pedido(request):
         talla = request.POST.get('talla')
         sexo = request.POST.get('sexo')
         imagen = request.POST.get('imagen')
+        letra = request.POST.get("letra", "").upper()  # Nueva letra A, B, etc.
 
         letra_sexo = sexo[0].upper()
-        clave_base = f"{modelo[:2].upper()}{color[0].upper()}{talla}{letra_sexo}"
-
+        
+        # Base del ID: ej. AP38H_A
+        clave_base = f"{modelo[:2].upper()}{talla}{color[0].upper()}{letra_sexo}{letra}"
+        
         pedido = request.session.get('pedido', {})
         contador = 1
 
-        # Buscar si ya existe una combinación parecida y encontrar el siguiente número
+        # Detectar si ya hay un ID similar
         ids_existentes = [pid for pid in pedido.keys() if pid.startswith(clave_base)]
         if ids_existentes:
             numeros = [int(pid[len(clave_base):]) for pid in ids_existentes]
@@ -148,25 +154,27 @@ def agregar_pedido(request):
 
         idZapato = f"{clave_base}{str(contador).zfill(3)}"
 
-        # Revisar si ya existe un zapato igual (modelo + color + talla + sexo)
+        # Buscar si ya existe un zapato con la misma combinación exacta (incluyendo letra)
         for pid, item in pedido.items():
             if (
                 item['modelo'] == modelo and
                 item['color'] == color and
                 str(item['talla']) == talla and
-                item['sexo'] == letra_sexo
+                item['sexo'] == letra_sexo and
+                item.get('letra', '') == letra
             ):
                 pedido[pid]['cantidad'] += 1
                 break
         else:
-            # Si no existe, se agrega como nuevo
+            # Agregar zapato nuevo
             pedido[idZapato] = {
                 'modelo': modelo,
                 'color': color,
                 'talla': talla,
                 'sexo': letra_sexo,
                 'cantidad': 1,
-                'imagen': imagen
+                'imagen': imagen,
+                'letra': letra
             }
 
         request.session['pedido'] = pedido
@@ -174,7 +182,34 @@ def agregar_pedido(request):
 
 
 
+def generar_pedido(request):
+    if request.method == 'POST':
+        # Recuperamos los datos del pedido desde la sesión
+        pedido = request.session.get('pedido', {})
+        
+        # Si el pedido está vacío, mostramos un error
+        if not pedido:
+            messages.error(request, "No tienes productos en tu carrito.")
+            return redirect('ver_pedido')
 
+        # Creamos el nombre del archivo JSON con un formato basado en la fecha y hora actual
+        file_name = f"pedido_{request.user.id}_{int(time.time())}.json"
+        file_path = os.path.join(settings.MEDIA_ROOT, 'pedidos', file_name)
+
+        # Guardamos el pedido como un archivo JSON
+        with open(file_path, 'w') as json_file:
+            json.dump(pedido, json_file)
+
+        # Aquí podrías agregar la lógica para guardar el pedido en la base de datos de bodega y zapatos
+
+        # Mensaje de éxito
+        messages.success(request, "Pedido generado correctamente y guardado en JSON.")
+        
+        # Limpiamos el pedido de la sesión
+        request.session['pedido'] = {}
+        
+        # Redirigimos al usuario a la página de pedidos generados o a donde prefieras
+        return redirect('pedidos_generados')  # Redirige a una vista donde puedas ver los pedidos generados
 
 
 

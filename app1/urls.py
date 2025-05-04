@@ -14,6 +14,7 @@ urlpatterns = [
     path('ver_pedidos/', views.ver_pedidos, name='ver_pedido'), 
     path('eliminar_pedido/', views.eliminar_pedido, name='eliminar_pedido'),
     path('actualizar_pedido/', views.actualizar_pedido, name='actualizar_pedido'),
+    path('generar_pedido/', views.generar_pedido, name='generar_pedido'),
     
     # Página principal de categorías
     path("categorias/", categorias_view, name="categorias"),
