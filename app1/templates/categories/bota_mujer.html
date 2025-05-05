@@ -42,10 +42,7 @@
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="cantidad_{{ forloop.counter }}" class="form-label">Cantidad</label>
-                            <input type="number" name="cantidad" id="cantidad_{{ forloop.counter }}" class="form-control" min="1" value="1" required>
-                        </div>
+
 
                         <button type="submit" class="btn" style="background-color: #28a745; color: white; border-radius: 5px; padding: 10px; width: 100%; font-weight: bold;">
                             Agregar al pedido
@@ -57,5 +54,27 @@
         
         {% endfor %}
     </div>
+{% if hay_pedido %}
+<hr class="mt-4 mb-3">
+
+<!-- Comentario y botones de acción -->
+<div class="container mt-3">
+    <form method="POST" action="{% url 'generar_pedido' %}">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+            <label for="comentario">Comentario adicional</label>
+            <textarea name="comentario" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">Generar Pedido</button>
+    </form>
+
+    <form method="POST" action="{% url 'eliminar_pedido' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Eliminar Pedido</button>
+    </form>
+</div>
+{% endif %}    
 </div>
 {% endblock %}

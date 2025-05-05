@@ -302,16 +302,28 @@ def eliminar_todo_pedido(request):
 def actualizar_pedido(request):
     if request.method == 'POST':
         producto_id = request.POST.get('producto_id')
-        action = request.POST.get('action')
+        nueva_cantidad = request.POST.get('cantidad')
 
         # Obtener el carrito desde la sesión
         pedido = request.session.get('pedido', {})
 
-        if producto_id in pedido:
-            if action == 'increment':
-                pedido[producto_id]['cantidad'] += 1
-            elif action == 'decrement' and pedido[producto_id]['cantidad'] > 1:
-                pedido[producto_id]['cantidad'] -= 1
+        if producto_id in pedido and nueva_cantidad:
+            try:
+                nueva_cantidad = int(nueva_cantidad)
+                if nueva_cantidad >= 1:
+                    # Actualizar la cantidad
+                    pedido[producto_id]['cantidad'] = nueva_cantidad
+
+                    # Regenerar los IDs únicos
+                    base_id = producto_id[:8]  # Toma las 8 primeras letras como base del ID
+                    zapato_ids = [
+                        f"{base_id}{str(i).zfill(3)}" for i in range(1, nueva_cantidad + 1)
+                    ]
+
+                    # Guardar los nuevos IDs generados
+                    pedido[producto_id]['zapato_ids'] = zapato_ids
+            except ValueError:
+                pass  # Ignorar si no es un número válido
 
         # Guardar el carrito actualizado en la sesión
         request.session['pedido'] = pedido
