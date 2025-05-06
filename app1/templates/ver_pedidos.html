@@ -2,6 +2,16 @@
 {% load static %}
 
 {% block content %}
+{% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 <div class="container mt-4">
     <h2>Mis Pedidos</h2>
 
@@ -59,17 +69,22 @@
             <button type="submit" class="btn btn-danger mt-3">Eliminar Todo el Pedido</button>
         </form>
 
-        <!-- Formulario para agregar comentario adicional -->
+        <!-- Formulario para agregar cliente y comentario -->
         <form method="POST" action="{% url 'generar_pedido' %}">
             {% csrf_token %}
-            <div class="form-group mt-3">
-                <label for="comentario">Comentario adicional</label>
-                <textarea name="comentario" class="form-control" rows="4"></textarea>
+            <div class="form-group mt-4">
+                <label for="cliente">Nombre del Cliente</label>
+                <input type="text" name="cliente" id="cliente" class="form-control" placeholder="Ingrese el nombre del cliente" required>
             </div>
 
-            <!-- Botones de acción con separación -->
+            <div class="form-group mt-3">
+                <label for="comentario">Comentario adicional</label>
+                <textarea name="comentario" class="form-control" rows="4" placeholder="Ej: urgente, enviar a bodega, etc."></textarea>
+            </div>
+
+            <!-- Botón para generar el pedido -->
             <div class="d-flex justify-content-between mt-4">
-                <button type="submit" class="btn btn-success mt-3">Generar Pedido</button>
+                <button type="submit" class="btn btn-success">Generar Pedido</button>
             </div>
         </form>
     </div>
@@ -88,5 +103,13 @@
             document.getElementById('alerta-cantidad').style.display = 'block';
         });
     });
+    // Espera 5 segundos y luego cierra los mensajes automáticamente
+    setTimeout(function () {
+        var alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function (alert) {
+            var bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+            bsAlert.close();
+        });
+    }, 5000); // 5000 milisegundos = 5 segundos
 </script>
 {% endblock %}

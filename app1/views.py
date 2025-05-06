@@ -4,61 +4,64 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib import messages
 from django.conf import settings
+from django.utils import timezone
 from string import ascii_uppercase
 from django.http import JsonResponse
-import json
-from django.utils import timezone
 import os
+import json
 
-# Vista personalizada para errores CSRF
+# -----------------------------
+# Manejo de errores CSRF
+# -----------------------------
 def csrf_failure(request, reason=""):
-    # Renderiza una página de error cuando ocurre un fallo de verificación CSRF
+    # Esta vista se muestra cuando ocurre un error de verificación CSRF
+    # El error CSRF generalmente ocurre cuando un formulario no tiene un token de seguridad
     return render(request, 'csrf_error.html', {'reason': reason})
 
-# Vista de login
+# -----------------------------
+# Autenticación
+# -----------------------------
+
 def login_view(request):
+    # Vista que maneja el inicio de sesión del usuario
     if request.method == "POST":
-        # Obtiene usuario y contraseña desde el formulario
+        # Se obtiene el nombre de usuario y la contraseña del formulario
         username = request.POST['username']
         password = request.POST['password']
-        
-        # Autentica al usuario con Django
+
+        # Se intenta autenticar al usuario
         user = authenticate(request, username=username, password=password)
-        
+
         if user is not None:
-            # Si las credenciales son correctas, inicia sesión y redirige a landing
+            # Si la autenticación es exitosa, se inicia sesión con el usuario
             login(request, user)
-            return redirect('landing')  
+            # Redirige a la vista principal después de iniciar sesión
+            return redirect('landing')
         else:
-            # Si son inválidas, recarga el formulario con un mensaje de error
+            # Si la autenticación falla, se muestra un mensaje de error
             return render(request, 'login.html', {'error': 'Credenciales inválidas'})
     
-    # Si es GET, simplemente muestra el formulario de login
-    return render(request, 'login.html') 
+    # Si la solicitud es GET, simplemente se muestra el formulario de inicio de sesión
+    return render(request, 'login.html')
 
-# Vista principal luego del login (requiere estar autenticado)
+def logout_view(request):
+    # Esta vista maneja el cierre de sesión del usuario
+    logout(request)
+    # Redirige al usuario de vuelta a la página de inicio de sesión
+    return redirect('login')
+
 @login_required
 def landing_view(request):
+    # Esta vista es la página principal a la que se accede después de iniciar sesión
+    # Sólo los usuarios autenticados pueden acceder a ella
     return render(request, 'landing.html')
 
-# Vista de categorías, muestra todas las opciones de modelos
-def categorias_view(request):
-    return render(request, 'categorias.html')
-
-# Cierra sesión del usuario y redirige a la página de login
-def logout_view(request):
-    logout(request)  
-    return redirect('login')  
-
-# ----------------------------
-# Sección de vistas de modelos de zapatos
-# ----------------------------
-
-# Datos comunes de colores y tallas disponibles
-COLORES = ['Negro', 'Gris', 'Azul', 'Verde', 'Amarillo']
-TALLAS = [36, 37, 38, 39, 40, 41, 42, 43]
+# -----------------------------
+# Vista de categorías de zapatos
+# -----------------------------
 
 def categorias_view(request):
+    # Vista que muestra todas las categorías de zapatos
     categorias = [
         {"nombre": "Apache Hombre", "imagen": "images/apacheH1.png", "url": "apache_hombre"},
         {"nombre": "Apolo Hombre", "imagen": "images/apoloH1.png", "url": "apolo_hombre"},
@@ -69,94 +72,93 @@ def categorias_view(request):
         {"nombre": "Apache Mujer", "imagen": "images/apacheM1.png", "url": "apache_mujer"},
         {"nombre": "Bota Mujer", "imagen": "images/botaM1.png", "url": "bota_mujer"},
     ]
+    # Retorna una página con las categorías de zapatos
     return render(request, 'categorias.html', {"categorias": categorias})
 
-# Vista genérica que renderiza los modelos de zapatos según el nombre y sexo
-# Vista genérica para modelos
+# -----------------------------
+# Vista genérica para mostrar modelos
+# -----------------------------
+
+COLORES = ['Negro', 'Gris', 'Azul', 'Verde', 'Amarillo']
+TALLAS = [36, 37, 38, 39, 40, 41, 42, 43]
+
 def categoria_view(request, nombre_modelo, sexo_abreviado):
+    # Esta es una vista genérica que muestra los modelos de zapatos de una categoría específica
+    # 'nombre_modelo' es el nombre del modelo de zapato (por ejemplo, "Apache")
+    # 'sexo_abreviado' indica si es para hombres ('H') o mujeres ('M')
+    
+    # Determina el sexo completo (Hombre o Mujer) a partir del valor abreviado
     sexo = 'Hombre' if sexo_abreviado == 'H' else 'Mujer'
     sufijo = 'H' if sexo_abreviado == 'H' else 'M'
-
-    # Lista de zapatos con nombre e imagen
+    
+    # Crea una lista de zapatos con nombres y rutas de imágenes
     zapatos = [
         {"nombre": f"{nombre_modelo} {sexo}", "imagen": f"images/{nombre_modelo}{sufijo}{i}.png"}
-        for i in range(1, 6)
+        for i in range(1, 6)  # Crea 5 modelos para cada categoría
     ]
-
-    # Letras para distinguir cada zapato visualmente (A, B, C, ...)
-    letras = list(ascii_uppercase[:len(zapatos)])  # ['A', 'B', 'C', 'D', 'E']
-
+    
+    # Asigna letras a cada modelo (A, B, C, ...)
+    letras = list(ascii_uppercase[:len(zapatos)])
+    
+    # Renderiza la plantilla correspondiente a esta categoría de zapatos
     return render(request, f"categories/{nombre_modelo.lower()}_{sexo.lower()}.html", {
-        "zapatos_con_letras": zip(zapatos, letras),
-        "colores": COLORES,
-        "tallas": TALLAS,
-        "sexo": sexo
+        "zapatos_con_letras": zip(zapatos, letras),  # Empareja cada zapato con una letra
+        "colores": COLORES,  # Colores disponibles
+        "tallas": TALLAS,    # Tallas disponibles
+        "sexo": sexo         # Sexo de la categoría (Hombre o Mujer)
     })
-# ----------------------------
-# Vistas específicas que llaman la función genérica con los parámetros adecuados
-# ----------------------------
 
-# Zapatos para hombre
-def apache_hombre_view(request):
-    return categoria_view(request, "Apache", "H")
+# Vistas específicas que usan la vista genérica
+# Estas vistas son para categorías específicas de zapatos
+def apache_hombre_view(request): return categoria_view(request, "Apache", "H")
+def apolo_hombre_view(request): return categoria_view(request, "Apolo", "H")
+def amaka_hombre_view(request): return categoria_view(request, "Amaka", "H")
+def nautico_hombre_view(request): return categoria_view(request, "Nautico", "H")
+def bota_hombre_view(request): return categoria_view(request, "Bota", "H")
+def casual_hombre_view(request): return categoria_view(request, "Casual", "H")
+def apache_mujer_view(request): return categoria_view(request, "Apache", "M")
+def bota_mujer_view(request): return categoria_view(request, "Bota", "M")
 
-def apolo_hombre_view(request):
-    return categoria_view(request, "Apolo", "H")
-
-def amaka_hombre_view(request):
-    return categoria_view(request, "Amaka", "H")
-
-def nautico_hombre_view(request):
-    return categoria_view(request, "Nautico", "H")
-
-def bota_hombre_view(request):
-    return categoria_view(request, "Bota", "H")
-
-def casual_hombre_view(request):
-    return categoria_view(request, "Casual", "H")
-
-# Zapatos para mujer
-def apache_mujer_view(request):
-    return categoria_view(request, "Apache", "M")
-
-def bota_mujer_view(request):
-    return categoria_view(request, "Bota", "M")
-
-
+# -----------------------------
+# Vista para ver los pedidos
+# -----------------------------
 def ver_pedidos(request):
-    # Recuperamos los datos del pedido de la sesión
-    pedido = request.session.get('pedido', {})
+    # Muestra los productos agregados al carrito de compras
+    pedido = request.session.get('pedido', {})  # Obtiene el pedido actual desde la sesión
     return render(request, 'ver_pedidos.html', {'pedido': pedido})
 
-
-
-
+# -----------------------------
+# Agregar producto al pedido
+# -----------------------------
 def agregar_pedido(request):
     if request.method == 'POST':
+        # Recibe los datos del producto a agregar
         modelo = request.POST.get('modelo')
         color = request.POST.get('color')
         talla = request.POST.get('talla')
         sexo = request.POST.get('sexo')
         imagen = request.POST.get('imagen')
-        letra = request.POST.get("letra", "").upper()  # Nueva letra A, B, etc.
+        letra = request.POST.get("letra", "").upper()  # Obtiene la letra asociada con el modelo
 
+        # Genera un código único para el zapato
         letra_sexo = sexo[0].upper()
-        
-        # Base del ID: ej. AP38H_A
         clave_base = f"{modelo[:2].upper()}{talla}{color[0].upper()}{letra_sexo}{letra}"
-        
+
+        # Obtiene el pedido actual desde la sesión
         pedido = request.session.get('pedido', {})
         contador = 1
 
-        # Detectar si ya hay un ID similar
+        # Busca si ya existe un zapato con la misma clave base (modelo, color, talla, sexo)
         ids_existentes = [pid for pid in pedido.keys() if pid.startswith(clave_base)]
         if ids_existentes:
+            # Si ya existe, se obtiene el número más alto para continuar con el siguiente ID
             numeros = [int(pid[len(clave_base):]) for pid in ids_existentes]
             contador = max(numeros) + 1
 
+        # Genera el ID final del zapato
         idZapato = f"{clave_base}{str(contador).zfill(3)}"
 
-        # Buscar si ya existe un zapato con la misma combinación exacta (incluyendo letra)
+        # Si el producto ya está en el pedido, solo se aumenta la cantidad
         for pid, item in pedido.items():
             if (
                 item['modelo'] == modelo and
@@ -168,7 +170,7 @@ def agregar_pedido(request):
                 pedido[pid]['cantidad'] += 1
                 break
         else:
-            # Agregar zapato nuevo
+            # Si el producto no está en el pedido, se agrega con cantidad 1
             pedido[idZapato] = {
                 'modelo': modelo,
                 'color': color,
@@ -179,161 +181,129 @@ def agregar_pedido(request):
                 'letra': letra
             }
 
+        # Guarda el pedido actualizado en la sesión
         request.session['pedido'] = pedido
         return redirect('ver_pedido')
 
-
+# -----------------------------
+# Generar archivo JSON del pedido
+# -----------------------------
 @login_required
 def generar_pedido(request):
     if request.method == 'POST':
-        # Obtener los productos del pedido desde la sesión (carrito de compras)
+        # Obtiene el pedido actual desde la sesión
         pedido_data = request.session.get('pedido', {})
         
+        # Si no hay productos en el carrito, muestra un error
         if not pedido_data:
             messages.error(request, "No hay productos en el carrito.")
             return redirect('ver_pedido')
 
-        # Crear una nueva orden (solo para estructura, no se guardará aún)
-        empleado = request.user  # Asumiendo que el usuario logueado es el empleado
-        comentario = request.POST.get('comentario', '') # Obtener comentarios adicionales del formulario
+        # Obtiene el comentario y cliente desde el formulario
+        comentario = request.POST.get('comentario', '')
+        cliente = request.POST.get('cliente', '')
 
-        # Guardar el comentario en la sesión
-        request.session['comentario'] = comentario 
+        # Guarda el comentario en la sesión
+        request.session['comentario'] = comentario
 
-        # Preparar los datos para el JSON
+        # Estructura los datos del pedido
         orden_data = {
-            'empleado': empleado.username,
+            'empleado': request.user.username,
+            'cliente': cliente,
             'fecha_creacion': timezone.now().isoformat(),
             'estado': 'PENDIENTE',
             'observaciones': comentario,
             'detalles': []
         }
 
-        # Preparar los detalles del pedido sin hacer queries
-        for producto_id, producto in pedido_data.items():
-            # Generar los IDs del zapato secuenciales
-            zapato_ids = []
-            for i in range(1, producto['cantidad'] + 1):
-                # Generamos el zapato_id secuencial, añadiendo ceros a la izquierda si es necesario
-                zapato_ids.append(f"{producto_id[:8]}{str(i).zfill(3)}")  # Ejemplo: AP36NHB001
+        # Agrega los detalles del pedido (zapatos) a la orden
+        for producto in pedido_data.values():
+            cantidad = int(producto.get('cantidad', 1))
+            for _ in range(cantidad):
+                detalle = {
+                    'modelo': producto['modelo'],
+                    'talla': producto['talla'],
+                    'sexo': producto['sexo'],
+                    'color': producto['color'],
+                    'imagen': producto.get('imagen', '')
+                }
+                orden_data['detalles'].append(detalle)
 
-            # Unir los zapato_id en una cadena separada por comas
-            zapato_id_secuenciales = ",".join(zapato_ids)
-
-            # Crear el detalle para este producto
-            detalle = {
-                'zapato_id': zapato_id_secuenciales,  # Usamos los IDs secuenciales
-                'modelo': producto['modelo'],
-                'talla': producto['talla'],
-                'sexo': producto['sexo'],
-                'color': producto['color'],
-                'cantidad': producto['cantidad'],
-                'imagen': producto.get('imagen', '')
-            }
-
-            # Añadimos el detalle al orden
-            orden_data['detalles'].append(detalle)
-
-        # Define la ruta donde guardar el archivo JSON
+        # Guarda el pedido como un archivo JSON
         archivos_pedidos_dir = os.path.join(settings.MEDIA_ROOT, 'archivos_pedidos')
-        
-        # Crea la carpeta 'archivos_pedidos' si no existe
-        if not os.path.exists(archivos_pedidos_dir):
-            os.makedirs(archivos_pedidos_dir)
+        os.makedirs(archivos_pedidos_dir, exist_ok=True)
 
-        # Define el nombre del archivo JSON con la fecha de creación para hacerlo único
-        file_name = f"pedido_{timezone.now().strftime('%Y%m%d%H%M%S')}.json"
+        # Genera un contador único para cada archivo de pedido
+        contador_path = os.path.join(archivos_pedidos_dir, 'contador.json')
+        if os.path.exists(contador_path):
+            with open(contador_path, 'r') as f:
+                contador = json.load(f).get('ultimo', 0) + 1
+        else:
+            contador = 1
+
+        # Actualiza el contador para futuros pedidos
+        with open(contador_path, 'w') as f:
+            json.dump({'ultimo': contador}, f)
+
+        # Añade el ID del pedido a los datos
+        orden_data['id_pedido'] = contador
+
+        # Guarda los datos del pedido en un archivo JSON
+        file_name = f"pedido_{contador}.json"
         file_path = os.path.join(archivos_pedidos_dir, file_name)
-
-        # Generar el archivo JSON con los datos de la orden
         with open(file_path, 'w') as archivo:
             json.dump(orden_data, archivo, indent=4)
-        
-        # Borrar el pedido de la sesión
-        if 'pedido' in request.session:
-            del request.session['pedido']
 
-        # Mostrar mensaje de éxito
-        messages.success(request, f"El pedido se ha generado exitosamente en formato JSON. Puedes verificarlo en: {file_path}")
-
-        # Redirigir al usuario a la vista de pedidos
+        # Borra el pedido de la sesión después de guardarlo
+        del request.session['pedido']
+        messages.success(request, f"Pedido #{contador} generado exitosamente.")
         return redirect('ver_pedido')
-    
-    # Si no es un POST, redirigir al carrito
+
+    # Redirige si no es una solicitud POST
     return redirect('ver_pedido')
 
 
-
-
+# -----------------------------
+# Eliminar producto individual del pedido
+# -----------------------------
 def eliminar_pedido(request):
     if request.method == 'POST':
         producto_id = request.POST.get('producto_id')
-
-        # Recuperamos el pedido actual
         pedido = request.session.get('pedido', {})
-
-        # Si hay un pedido en la sesión
         if producto_id in pedido:
-            del pedido[producto_id]  # Eliminar el producto por su ID
-
-            # Actualizamos el pedido en la sesión
+            del pedido[producto_id]
             request.session['pedido'] = pedido
-
-            # Mensaje de éxito
             messages.success(request, 'Producto eliminado del carrito.')
+        return redirect('ver_pedido')
+    return redirect('landing')
 
-        return redirect('ver_pedido')  # Redirigimos a la vista de pedidos
-
-    return redirect('landing')  # Si no es un POST, redirigimos a landing
-
+# -----------------------------
+# Eliminar todo el pedido
+# -----------------------------
 def eliminar_todo_pedido(request):
     if request.method == 'POST':
-        # Borramos todo el pedido de la sesión
         if 'pedido' in request.session:
             del request.session['pedido']
             messages.success(request, 'Pedido eliminado con éxito.')
         else:
             messages.warning(request, 'No hay pedido que eliminar.')
+        return redirect('ver_pedido')
+    return redirect('landing')
 
-        return redirect('ver_pedido')  # Redirigir a la vista de ver pedidos o donde prefieras
-
-    return redirect('landing')  # Redirige a una página por defecto si no es un POST
-
+# -----------------------------
+# Actualizar cantidad de un producto
+# -----------------------------
 def actualizar_pedido(request):
     if request.method == 'POST':
         producto_id = request.POST.get('producto_id')
         nueva_cantidad = request.POST.get('cantidad')
-
-        # Obtener el carrito desde la sesión
         pedido = request.session.get('pedido', {})
-
         if producto_id in pedido and nueva_cantidad:
             try:
                 nueva_cantidad = int(nueva_cantidad)
                 if nueva_cantidad >= 1:
-                    # Actualizar la cantidad
                     pedido[producto_id]['cantidad'] = nueva_cantidad
-
-                    # Regenerar los IDs únicos
-                    base_id = producto_id[:8]  # Toma las 8 primeras letras como base del ID
-                    zapato_ids = [
-                        f"{base_id}{str(i).zfill(3)}" for i in range(1, nueva_cantidad + 1)
-                    ]
-
-                    # Guardar los nuevos IDs generados
-                    pedido[producto_id]['zapato_ids'] = zapato_ids
             except ValueError:
-                pass  # Ignorar si no es un número válido
-
-        # Guardar el carrito actualizado en la sesión
+                pass
         request.session['pedido'] = pedido
-
     return redirect('ver_pedido')
-
-
-
-def generar_id_unico(modelo, color, talla, sexo, contador):
-    color_inicial = color[0].upper()  # Obtener la inicial del color
-    sexo_letra = sexo.upper()  # Obtener la letra del sexo
-    id_unico = f"{modelo[:2].upper()}{talla}{color_inicial}{sexo_letra}{str(contador).zfill(3)}"
-    return id_unico

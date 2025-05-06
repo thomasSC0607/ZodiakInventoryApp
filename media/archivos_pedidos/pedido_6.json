@@ -1,0 +1,24 @@
+{
+    "empleado": "admin",
+    "cliente": "Zodiak",
+    "fecha_creacion": "2025-05-06T16:51:48.515203+00:00",
+    "estado": "PENDIENTE",
+    "observaciones": "",
+    "detalles": [
+        {
+            "modelo": "Apache Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "imagen": "images/ApacheH1.png"
+        },
+        {
+            "modelo": "Apache Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "imagen": "images/ApacheH1.png"
+        }
+    ],
+    "id_pedido": 6
+}
