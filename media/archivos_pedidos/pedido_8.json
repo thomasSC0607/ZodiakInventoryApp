@@ -1,0 +1,192 @@
+{
+    "empleado": "admin",
+    "cliente": "Zodiak",
+    "fecha_creacion": "2025-05-06T19:39:58.669694+00:00",
+    "estado": "PENDIENTE",
+    "observaciones": "Urgente angel necesita estos pares en bodega",
+    "detalles": [
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apolo Hombre",
+            "talla": "42",
+            "sexo": "H",
+            "color": "Verde",
+            "imagen": "images/ApoloH1.png"
+        },
+        {
+            "modelo": "Apache Mujer",
+            "talla": "36",
+            "sexo": "M",
+            "color": "Negro",
+            "imagen": "images/ApacheM5.png"
+        },
+        {
+            "modelo": "Apache Mujer",
+            "talla": "36",
+            "sexo": "M",
+            "color": "Negro",
+            "imagen": "images/ApacheM5.png"
+        },
+        {
+            "modelo": "Apache Mujer",
+            "talla": "36",
+            "sexo": "M",
+            "color": "Negro",
+            "imagen": "images/ApacheM5.png"
+        },
+        {
+            "modelo": "Apache Mujer",
+            "talla": "36",
+            "sexo": "M",
+            "color": "Negro",
+            "imagen": "images/ApacheM5.png"
+        },
+        {
+            "modelo": "Apache Mujer",
+            "talla": "36",
+            "sexo": "M",
+            "color": "Negro",
+            "imagen": "images/ApacheM5.png"
+        },
+        {
+            "modelo": "Apache Mujer",
+            "talla": "36",
+            "sexo": "M",
+            "color": "Negro",
+            "imagen": "images/ApacheM5.png"
+        }
+    ],
+    "id_pedido": 8
+}

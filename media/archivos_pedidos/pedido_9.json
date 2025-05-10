@@ -1,0 +1,129 @@
+{
+    "empleado": "admin",
+    "cliente": "Zodiak",
+    "fecha_creacion": "2025-05-07T00:56:32.774368+00:00",
+    "estado": "PENDIENTE",
+    "observaciones": "se necesita en bodega para el viernes",
+    "detalles": [
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Casual Hombre",
+            "talla": "40",
+            "sexo": "H",
+            "color": "Gris",
+            "imagen": "images/CasualH3.png"
+        },
+        {
+            "modelo": "Amaka Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "imagen": "images/AmakaH3.png"
+        },
+        {
+            "modelo": "Amaka Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "imagen": "images/AmakaH3.png"
+        },
+        {
+            "modelo": "Amaka Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "imagen": "images/AmakaH3.png"
+        },
+        {
+            "modelo": "Amaka Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "imagen": "images/AmakaH3.png"
+        },
+        {
+            "modelo": "Amaka Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "imagen": "images/AmakaH3.png"
+        },
+        {
+            "modelo": "Amaka Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "imagen": "images/AmakaH3.png"
+        },
+        {
+            "modelo": "Amaka Hombre",
+            "talla": "36",
+            "sexo": "H",
+            "color": "Negro",
+            "imagen": "images/AmakaH3.png"
+        }
+    ],
+    "id_pedido": 9
+}
