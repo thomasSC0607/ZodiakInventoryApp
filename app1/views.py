@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
@@ -6,9 +6,15 @@ from django.contrib import messages
 from django.conf import settings
 from django.utils import timezone
 from string import ascii_uppercase
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from .forms import ClientesForm, ZapatoForm
+from .models import Cliente, Zapato, Pedido
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from io import BytesIO
 import os
 import json
+import qrcode
 
 # -----------------------------
 # Manejo de errores CSRF
@@ -21,7 +27,6 @@ def csrf_failure(request, reason=""):
 # -----------------------------
 # Autenticación
 # -----------------------------
-
 def login_view(request):
     # Vista que maneja el inicio de sesión del usuario
     if request.method == "POST":
@@ -80,7 +85,7 @@ def categorias_view(request):
 # -----------------------------
 
 COLORES = ['Negro', 'Gris', 'Azul', 'Verde', 'Amarillo']
-TALLAS = [36, 37, 38, 39, 40, 41, 42, 43]
+TALLAS = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45]
 
 def categoria_view(request, nombre_modelo, sexo_abreviado):
     # Esta es una vista genérica que muestra los modelos de zapatos de una categoría específica
@@ -120,29 +125,109 @@ def apache_mujer_view(request): return categoria_view(request, "Apache", "M")
 def bota_mujer_view(request): return categoria_view(request, "Bota", "M")
 
 # -----------------------------
+# Vista para clientes
+# -----------------------------
+@login_required
+def ver_clientes(request):
+    # Obtener todos los clientes de la base de datos
+    clientes = Cliente.objects.all()
+    # Renderizar la plantilla con la lista de clientes
+    return render(request, 'ver_clientes.html', {'clientes': clientes})
+
+# -----------------------------
+# Vista para clientes
+# -----------------------------
+@login_required
+def crear_clientes(request):
+    # Vista para crear un nuevo cliente
+    if request.method == 'POST':
+        form = ClientesForm(request.POST)
+        if form.is_valid():
+            # Verificar si el cliente ya existe
+            nombre = form.cleaned_data['nombre']
+            if Cliente.objects.filter(nombre=nombre).exists():
+                messages.error(request, "El cliente ya existe.")
+                return redirect('crear_clientes')
+            else:
+                # Guardar el nuevo cliente en la base de datos
+                form.save()
+                messages.success(request, "Cliente creado exitosamente.")
+                return redirect('ver_clientes')
+    else:
+        form = ClientesForm()
+    return render(request, 'crear_cliente.html', {'form': form})
+
+# -----------------------------
 # Vista para ver los pedidos
 # -----------------------------
-def ver_pedidos(request):
+@login_required
+def ver_carrito(request):
     # Muestra los productos agregados al carrito de compras
+    clientes = Cliente.objects.all()  # Obtiene todos los clientes de la base de datos
     pedido = request.session.get('pedido', {})  # Obtiene el pedido actual desde la sesión
-    return render(request, 'ver_pedidos.html', {'pedido': pedido})
+    contexto = {
+        'pedido': pedido,
+        'clientes': clientes,
+    }
+    return render(request, 'ver_carrito.html', contexto)  # Renderiza la plantilla con el pedido y los clientes
+
+# -----------------------------
+# Crear codigos QR únicos para un zapato
+# ----------------------------
+def generar_codigo_qr(zapato):
+    """
+    Genera un código QR para un zapato y devuelve la imagen.
+    """
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data({
+        'referencia': zapato.referencia,
+        'modelo': zapato.modelo,
+        'talla': zapato.talla,
+        'sexo': zapato.sexo,
+        'color': zapato.color,
+        'requerimientos': zapato.requerimientos,
+        'observaciones': zapato.observaciones,
+        'pedido': zapato.pedido,
+    })
+    qr.make(fit=True)
+    return qr.make_image(fill_color="black", back_color="white")
+
+def guardar_qr(zapato, img):
+    """
+    Guarda la imagen del QR en un directorio específico.
+    """
+    qr_directory = 'qr_codes/'  # Directorio donde se guardarán los QR
+    os.makedirs(qr_directory, exist_ok=True)  # Crea el directorio si no existe
+    qr_path = os.path.join(qr_directory, f"zapato_{zapato.id}.png")
+    img.save(qr_path)
+    return qr_path
 
 # -----------------------------
 # Agregar producto al pedido
-# -----------------------------
+# Coge los formularios de cada uno de los archivos hmtl de cada uno de los modelos
+# ----------------------------
+@login_required
 def agregar_pedido(request):
     if request.method == 'POST':
         # Recibe los datos del producto a agregar
-        modelo = request.POST.get('modelo')
+        modelo = request.POST.get('modelo') 
         color = request.POST.get('color')
         talla = request.POST.get('talla')
         sexo = request.POST.get('sexo')
         imagen = request.POST.get('imagen')
+        requerimientos = request.POST.get('requerimientos')
+        observaciones = request.POST.get('observaciones')
         letra = request.POST.get("letra", "").upper()  # Obtiene la letra asociada con el modelo
 
         # Genera un código único para el zapato
         letra_sexo = sexo[0].upper()
         clave_base = f"{modelo[:2].upper()}{talla}{color[0].upper()}{letra_sexo}{letra}"
+
 
         # Obtiene el pedido actual desde la sesión
         pedido = request.session.get('pedido', {})
@@ -156,7 +241,8 @@ def agregar_pedido(request):
             contador = max(numeros) + 1
 
         # Genera el ID final del zapato
-        idZapato = f"{clave_base}{str(contador).zfill(3)}"
+        # idZapato = f"{clave_base}{str(contador).zfill(3)}"
+        idZapato = f"{clave_base}"
 
         # Si el producto ya está en el pedido, solo se aumenta la cantidad
         for pid, item in pedido.items():
@@ -178,12 +264,26 @@ def agregar_pedido(request):
                 'sexo': letra_sexo,
                 'cantidad': 1,
                 'imagen': imagen,
-                'letra': letra
+                'letra': letra,
+                'requerimientos': requerimientos,
+                'observaciones': observaciones,
             }
 
+        # Crear o recuperar el zapato en la base de datos
+        zapato, created = Zapato.objects.get_or_create(
+            referencia=clave_base,
+            defaults={
+                'modelo': modelo,
+                'talla': talla,
+                'sexo': letra_sexo,
+                'color': color,
+                'requerimientos': requerimientos,
+                'observaciones': observaciones,
+            }
+        )
         # Guarda el pedido actualizado en la sesión
         request.session['pedido'] = pedido
-        return redirect('ver_pedido')
+        return redirect('ver_carrito')
 
 # -----------------------------
 # Generar archivo JSON del pedido
@@ -197,71 +297,134 @@ def generar_pedido(request):
         # Si no hay productos en el carrito, muestra un error
         if not pedido_data:
             messages.error(request, "No hay productos en el carrito.")
-            return redirect('ver_pedido')
+            return redirect('ver_carrito')
 
         # Obtiene el comentario y cliente desde el formulario
         comentario = request.POST.get('comentario', '')
-        cliente = request.POST.get('cliente', '')
+        cliente_nombre = request.POST.get('cliente')  # Captura el ID del cliente desde el formulario
+        print(f"Cliente ID recibido: {cliente_nombre}")
 
+        try:
+            # Busca el cliente en la base de datos por su ID
+            cliente = Cliente.objects.get(nombre=cliente_nombre)
+        except Cliente.DoesNotExist:
+            messages.error(request, "El cliente seleccionado no existe.")
+            return redirect('ver_carrito')
         # Guarda el comentario en la sesión
         request.session['comentario'] = comentario
 
-        # Estructura los datos del pedido
-        orden_data = {
-            'empleado': request.user.username,
-            'cliente': cliente,
-            'fecha_creacion': timezone.now().isoformat(),
-            'estado': 'PENDIENTE',
-            'observaciones': comentario,
-            'detalles': []
-        }
+        pedido = Pedido.objects.create(
+            empleado=request.user,
+            cliente=cliente,
+            fecha_creacion=timezone.now(),
+            observaciones=comentario,
+        )
 
-        # Agrega los detalles del pedido (zapatos) a la orden
-        for producto in pedido_data.values():
+        # Lista para almacenar las rutas de los codigos QR generados
+        qr_paths = []
+        zapato_info = []
+
+        # Relaciona los zapatos existentes con el pedido y actualiza su estado
+        for producto_id, producto in pedido_data.items():
             cantidad = int(producto.get('cantidad', 1))
-            for _ in range(cantidad):
-                detalle = {
-                    'modelo': producto['modelo'],
-                    'talla': producto['talla'],
-                    'sexo': producto['sexo'],
-                    'color': producto['color'],
-                    'imagen': producto.get('imagen', '')
-                }
-                orden_data['detalles'].append(detalle)
+            zapatos = Zapato.objects.filter(referencia=producto_id, estado='Pendiente')[:cantidad]  # Obtiene los zapatos existentes
 
-        # Guarda el pedido como un archivo JSON
-        archivos_pedidos_dir = os.path.join(settings.MEDIA_ROOT, 'archivos_pedidos')
-        os.makedirs(archivos_pedidos_dir, exist_ok=True)
+            for zapato in zapatos:
+                zapato.pedido = pedido  # Asocia el zapato con el pedido
+                zapato.estado = 'Producción'  # Cambia el estado del zapato a Producción
+                zapato.save()  # Guarda los cambios en la base de datos
+                # Genera el código QR para el zapato
+                qr_img = generar_codigo_qr(zapato)
+                qr_path = guardar_qr(zapato, qr_img)  # Guarda la imagen del QR
+                qr_paths.append(qr_path)  # Agrega la ruta del QR a la lista
 
-        # Genera un contador único para cada archivo de pedido
-        contador_path = os.path.join(archivos_pedidos_dir, 'contador.json')
-        if os.path.exists(contador_path):
-            with open(contador_path, 'r') as f:
-                contador = json.load(f).get('ultimo', 0) + 1
-        else:
-            contador = 1
+                # Almacena la información del zapato junto con la ruta del QR
+                zapato_info.append({
+                    'referencia': zapato.referencia,
+                    'modelo': zapato.modelo,
+                    'talla': zapato.talla,
+                    'sexo': zapato.sexo,
+                    'color': zapato.color,
+                    'requerimientos': zapato.requerimientos,
+                    'observaciones': zapato.observaciones,
+                    'qr_path': qr_path,
+                })
 
-        # Actualiza el contador para futuros pedidos
-        with open(contador_path, 'w') as f:
-            json.dump({'ultimo': contador}, f)
+        # Generar el archivo PDF en memoria y guardarlo en el servidor
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=letter)
 
-        # Añade el ID del pedido a los datos
-        orden_data['id_pedido'] = contador
+        # Titulo del PDF
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(200, 750, f"Pedido #{pedido.id}")
+        c.setFont("Helvetica", 12)
+        c.drawString(50, 730, f"Cliente: {cliente.nombre}")
+        c.drawString(50, 710, f"Fecha: {pedido.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S')}")
+        c.drawString(50, 690, f"Observaciones: {pedido.observaciones}")
 
-        # Guarda los datos del pedido en un archivo JSON
-        file_name = f"pedido_{contador}.json"
-        file_path = os.path.join(archivos_pedidos_dir, file_name)
-        with open(file_path, 'w') as archivo:
-            json.dump(orden_data, archivo, indent=4)
+        # Agregar información de cada zapato al PDF
+        y_position = 650
+        for info in zapato_info:
+            if y_position < 100: # Salto de pagina si la posición es muy baja
+                c.showPage()
+                y_position = 750
+            
+            c.drawString(50, y_position, f"Referencia: {info['referencia']}")
+            c.drawString(50, y_position - 20, f"Modelo: {info['modelo']}")
+            c.drawString(50, y_position - 40, f"Talla: {info['talla']}")
+            c.drawImage(info['qr_path'], 400, y_position - 70, width=100, height=100)  # Agrega el QR al PDF
+            y_position -= 120  # Espacio entre cada zapato
+        c.save()  # Guarda el PDF
 
-        # Borra el pedido de la sesión después de guardarlo
-        del request.session['pedido']
-        messages.success(request, f"Pedido #{contador} generado exitosamente.")
-        return redirect('ver_pedido')
+        # Guarda el PEDF en el servidor
+        pdf_path = os.path.join(settings.MEDIA_ROOT, 'pdf_pedidos', f"pedido_{pedido.id}.pdf")
+        os.makedirs(os.path.dirname(pdf_path), exist_ok=True)  # Crea el directorio si no existe
+        
+        with open(pdf_path, 'wb') as f:
+            f.write(buffer.getvalue())
 
-    # Redirige si no es una solicitud POST
-    return redirect('ver_pedido')
 
+        # Borra el pedido de la sesión después de generarlo
+        if 'pedido' in request.session:
+            del request.session['pedido']
+            request.session.modified = True  # Marca la sesión como modificada
+
+        # Devuelve el PDF como respuesta HTTP para abrirlo en una pestaña
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="pedido_{pedido.id}.pdf"'
+        # Mensaje de éxito
+        messages.success(request, f"Pedido #{pedido.id} generado exitosamente.")
+        return response
+        # Si no se encuentra el cliente, muestra un mensaje de error
+    return redirect('ver_carrito')
+
+# -----------------------------
+# Ver Pedidos
+# -----------------------------
+@login_required
+def ver_pedidos(request):
+    # Vista para ver todos los pedidos
+    pedidos = Pedido.objects.select_related('cliente').all()  # Obtiene todos los pedidos de la base de datos al mismo tiempo que los clientes relacionados
+    return render(request, 'ver_pedidos.html', {'pedidos': pedidos})  # Renderiza la plantilla con la lista de pedidos
+
+# -----------------------------
+# Ver los Zapatos de un pedido
+# -----------------------------
+@login_required
+def ver_zapatos_pedido(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)  # Obtiene el pedido por su ID
+
+    zapatos = Zapato.objects.filter(pedido=pedido)  # Filtra los zapatos asociados a ese pedido
+
+    # Generar la URL del PDF
+    pdf_url = f"{settings.MEDIA_URL}pdf_pedidos/pedido_{pedido.id}.pdf"
+
+    return render(request, 'ver_zapatos_pedido.html', {
+        'pedido': pedido,
+        'zapatos': zapatos,
+        'pdf_url': pdf_url,  # Pasa la URL del PDF a la plantilla
+    })  # Renderiza la plantilla con el pedido y los zapatos asociados
 
 # -----------------------------
 # Eliminar producto individual del pedido
@@ -270,11 +433,15 @@ def eliminar_pedido(request):
     if request.method == 'POST':
         producto_id = request.POST.get('producto_id')
         pedido = request.session.get('pedido', {})
+        zapato_eliminar = Zapato.objects.filter(referencia=producto_id)
+        if zapato_eliminar:
+            zapato_eliminar.delete()
+        # Si el producto está en el pedido, lo elimina
         if producto_id in pedido:
             del pedido[producto_id]
             request.session['pedido'] = pedido
             messages.success(request, 'Producto eliminado del carrito.')
-        return redirect('ver_pedido')
+        return redirect('ver_carrito')
     return redirect('landing')
 
 # -----------------------------
@@ -282,12 +449,16 @@ def eliminar_pedido(request):
 # -----------------------------
 def eliminar_todo_pedido(request):
     if request.method == 'POST':
+        producto_id = request.POST.get('producto_id')
+        zapato_eliminar = Zapato.objects.filter(referencia=producto_id)
+        if zapato_eliminar:
+            zapato_eliminar.delete()
         if 'pedido' in request.session:
             del request.session['pedido']
             messages.success(request, 'Pedido eliminado con éxito.')
         else:
             messages.warning(request, 'No hay pedido que eliminar.')
-        return redirect('ver_pedido')
+        return redirect('ver_carrito')
     return redirect('landing')
 
 # -----------------------------
@@ -303,7 +474,20 @@ def actualizar_pedido(request):
                 nueva_cantidad = int(nueva_cantidad)
                 if nueva_cantidad >= 1:
                     pedido[producto_id]['cantidad'] = nueva_cantidad
+
+                    # Zapato.objects.filter(referencia=producto_id).delete()
+                    # Eliminar el zapato existente
+                    for i in range(nueva_cantidad - 1):
+                        zapato = Zapato.objects.create(
+                            referencia=producto_id,
+                            modelo=pedido[producto_id]['modelo'],
+                            talla=pedido[producto_id]['talla'],
+                            sexo=pedido[producto_id]['sexo'],
+                            color=pedido[producto_id]['color'],
+                            requerimientos=pedido[producto_id]['requerimientos'],
+                            observaciones=pedido[producto_id]['observaciones']
+                        )
             except ValueError:
                 pass
         request.session['pedido'] = pedido
-    return redirect('ver_pedido')
+    return redirect('ver_carrito')

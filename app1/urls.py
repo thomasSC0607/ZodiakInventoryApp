@@ -13,11 +13,15 @@ urlpatterns = [
     #Pagina para pedidos
     
     path('agregar_pedido/', views.agregar_pedido, name='agregar_pedido'),
-    path('ver_pedidos/', views.ver_pedidos, name='ver_pedido'), 
+    path('ver_carrito/', views.ver_carrito, name='ver_carrito'), 
+    path('ver_clientes/', views.ver_clientes, name='ver_clientes'), 
+    path('ver_pedidos/', views.ver_pedidos, name='ver_pedidos'), 
+    path('crear_clientes/', views.crear_clientes, name='crear_clientes'),
     path('eliminar_pedido/', views.eliminar_pedido, name='eliminar_pedido'),
     path('eliminar_todo_pedido/', views.eliminar_todo_pedido, name='eliminar_todo_pedido'),
     path('actualizar_pedido/', views.actualizar_pedido, name='actualizar_pedido'),
     path('generar_pedido/', views.generar_pedido, name='generar_pedido'),
+    path('zapatos/<int:pedido_id>/', views.ver_zapatos_pedido, name='ver_zapatos_pedido'),
     
     
     # Página principal de categorías

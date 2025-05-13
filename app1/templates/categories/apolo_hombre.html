@@ -42,6 +42,17 @@
                             </select>
                         </div>
 
+                        <!-- Nuevo campo de texto 1 -->
+                        <div class="mb-3">
+                            <label for="requerimientos_{{ forloop.counter }}" class="form-label">Requerimientos</label>
+                            <input type="text" name="requerimientos" id="requerimientos_{{ forloop.counter }}" class="form-control" placeholder="Ingrese los requerimientos para este apache">
+                        </div>
+
+                        <!-- Nuevo campo de texto 2 -->
+                        <div class="mb-3">
+                            <label for="observaciones_{{ forloop.counter }}" class="form-label">Observaciones</label>
+                            <input type="text" name="observaciones" id="observaciones_{{ forloop.counter }}" class="form-control" placeholder="Ingrese obsevaciones si aplican">
+                        </div>
 
 
                         <button type="submit" class="btn" style="background-color: #28a745; color: white; border-radius: 5px; padding: 10px; width: 100%; font-weight: bold;">
