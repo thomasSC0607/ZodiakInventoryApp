@@ -46,5 +46,6 @@ urlpatterns = [
     path("zapatos/nautico_hombre/", views.nautico_hombre_view, name="nautico_hombre"),
     path("zapatos/apache_mujer/", views.apache_mujer_view, name="apache_mujer"),
     path("zapatos/bota_mujer/", views.bota_mujer_view, name="bota_mujer"),
+    path('cargar_qr/', views.cargar_qr, name='cargar_qr'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
