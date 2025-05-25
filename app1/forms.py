@@ -25,3 +25,9 @@ class ZapatoForm(forms.ModelForm):
             'requerimientos': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Requerimientos'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Observaciones'}),
         }
+
+class QRFileUploadForm(forms.Form):
+    archivo = forms.FileField(
+        label="Sube una imagen o PDF con QR",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
+    )

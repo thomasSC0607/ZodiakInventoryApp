@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 from string import ascii_uppercase
 from django.http import JsonResponse, HttpResponse
-from .forms import ClientesForm, ZapatoForm
+from .forms import ClientesForm, ZapatoForm, QRFileUploadForm
 from .models import Cliente, Zapato, Pedido
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -15,6 +15,11 @@ from io import BytesIO
 import os
 import json
 import qrcode
+import cv2
+import numpy as np
+from pyzbar.pyzbar import decode
+from pdf2image import convert_from_bytes
+from django.db.models import Q
 
 # -----------------------------
 # Manejo de errores CSRF
@@ -192,7 +197,7 @@ def generar_codigo_qr(zapato):
         'color': zapato.color,
         'requerimientos': zapato.requerimientos,
         'observaciones': zapato.observaciones,
-        'pedido': zapato.pedido,
+        'pedido_id': zapato.pedido.id, 
     })
     qr.make(fit=True)
     return qr.make_image(fill_color="black", back_color="white")
@@ -237,8 +242,8 @@ def agregar_pedido(request):
         ids_existentes = [pid for pid in pedido.keys() if pid.startswith(clave_base)]
         if ids_existentes:
             # Si ya existe, se obtiene el número más alto para continuar con el siguiente ID
-            numeros = [int(pid[len(clave_base):]) for pid in ids_existentes]
-            contador = max(numeros) + 1
+            numeros = [int(pid[len(clave_base):]) for pid in ids_existentes if pid[len(clave_base):].isdigit()]
+            contador = max(numeros) + 1 if numeros else 1
 
         # Genera el ID final del zapato
         # idZapato = f"{clave_base}{str(contador).zfill(3)}"
@@ -272,11 +277,11 @@ def agregar_pedido(request):
         # Crear o recuperar el zapato en la base de datos
         zapato, created = Zapato.objects.get_or_create(
             referencia=clave_base,
+            modelo=modelo,
+            talla=talla,
+            sexo=letra_sexo,
+            color=color,
             defaults={
-                'modelo': modelo,
-                'talla': talla,
-                'sexo': letra_sexo,
-                'color': color,
                 'requerimientos': requerimientos,
                 'observaciones': observaciones,
             }
@@ -327,7 +332,7 @@ def generar_pedido(request):
         # Relaciona los zapatos existentes con el pedido y actualiza su estado
         for producto_id, producto in pedido_data.items():
             cantidad = int(producto.get('cantidad', 1))
-            zapatos = Zapato.objects.filter(referencia=producto_id, estado='Pendiente')[:cantidad]  # Obtiene los zapatos existentes
+            zapatos = Zapato.objects.filter(referencia=producto_id, estado='Pendientes')[:cantidad]  # Obtiene los zapatos existentes
 
             for zapato in zapatos:
                 zapato.pedido = pedido  # Asocia el zapato con el pedido
@@ -491,3 +496,86 @@ def actualizar_pedido(request):
                 pass
         request.session['pedido'] = pedido
     return redirect('ver_carrito')
+
+@login_required
+def cargar_qr(request):
+    resultado = []
+    mensaje = ""
+    qr_leidos = []
+
+    if request.method == 'POST':
+        form = QRFileUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = form.cleaned_data['archivo']
+            nombre = archivo.name.lower()
+            imagenes = []
+
+            # Convertir PDF en imágenes
+            if nombre.endswith('.pdf'):
+                paginas = convert_from_bytes(archivo.read())
+                for pagina in paginas:
+                    imagen = np.array(pagina)
+                    imagenes.append(cv2.cvtColor(imagen, cv2.COLOR_RGB2BGR))
+            else:
+                # Leer imagen directamente
+                file_bytes = np.asarray(bytearray(archivo.read()), dtype=np.uint8)
+                imagen = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+                imagenes.append(imagen)
+
+            referencias_info = []
+            for img in imagenes:
+                for qr in decode(img):
+                    data = qr.data.decode('utf-8')
+                    qr_leidos.append(data)
+                    try:
+                        # Reemplazar comillas simples con dobles
+                        info = json.loads(data.replace("'", '"'))
+                        referencia = info.get('referencia')
+                        if referencia:
+                            referencias_info.append(info)
+                    except Exception as e:
+                        print("Error leyendo QR:", e)
+                        continue
+
+            zapatos_actualizados = []
+            for info in referencias_info:
+                referencia = str(info.get('referencia', '')).strip()
+                modelo = str(info.get('modelo', '')).strip()
+                talla = str(info.get('talla', '')).strip()
+                sexo = str(info.get('sexo', '')).strip()
+                color = str(info.get('color', '')).strip()
+                print("Buscando zapato con:", referencia, modelo, talla, sexo, color)
+                zapato = Zapato.objects.filter(
+                    referencia__iexact=referencia,
+                    modelo__iexact=modelo,
+                    talla__iexact=talla,
+                    sexo__iexact=sexo,
+                    color__iexact=color
+                ).first()
+                if zapato:
+                    print("¡Zapato encontrado y actualizado!")
+                    zapato.estado = 'Bodega'
+                    zapato.save()
+                    zapatos_actualizados.append(zapato)
+                    pedido = zapato.pedido
+                    if pedido:
+                        zapatos_pedido = Zapato.objects.filter(pedido=pedido)
+                        if all(z.estado == 'Bodega' for z in zapatos_pedido):
+                            pedido.estado = 'Completada'
+                            pedido.save()
+                else:
+                    print("No se encontró el zapato.")
+
+            resultado = zapatos_actualizados
+            mensaje = f"{len(zapatos_actualizados)} zapato(s) actualizado(s) a 'Bodega'."
+        else:
+            mensaje = "Archivo no válido."
+    else:
+        form = QRFileUploadForm()
+
+    return render(request, 'cargar_qr.html', {
+        'form': form,
+        'resultado': resultado,
+        'mensaje': mensaje,
+        'qr_leidos': qr_leidos
+    })
