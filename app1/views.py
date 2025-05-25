@@ -192,6 +192,7 @@ def generar_codigo_qr(zapato):
         'color': zapato.color,
         'requerimientos': zapato.requerimientos,
         'observaciones': zapato.observaciones,
+        'estado': zapato.estado,
         'pedido': zapato.pedido,
     })
     qr.make(fit=True)
@@ -347,6 +348,7 @@ def generar_pedido(request):
                     'color': zapato.color,
                     'requerimientos': zapato.requerimientos,
                     'observaciones': zapato.observaciones,
+                    'estado': zapato.estado,
                     'qr_path': qr_path,
                 })
 
