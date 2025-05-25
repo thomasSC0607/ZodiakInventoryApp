@@ -2,58 +2,55 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Cargar QR para actualizar estado</h2>
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow p-4" style="max-width: 600px; width: 100%;">
+        <h2 class="text-center mb-4">Cargar QR para actualizar estado</h2>
 
-    {% if mensaje %}
-        <div class="alert alert-info">
-            {{ mensaje }}
-        </div>
-    {% endif %}
+        {% if mensaje %}
+            <div class="alert alert-info text-center">
+                {{ mensaje }}
+            </div>
+        {% endif %}
 
-    <form method="POST" enctype="multipart/form-data" class="mb-4">
-        {% csrf_token %}
-        <div class="form-group">
-            {{ form.as_p }}
-        </div>
-        <button type="submit" class="btn btn-primary">Subir archivo</button>
-    </form>
+        <form method="POST" enctype="multipart/form-data" class="mb-4">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.as_p }}
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">Subir archivo</button>
+            </div>
+        </form>
 
-    {% if qr_leidos %}
-        <h4>QR leídos:</h4>
-        <ul>
-            {% for qr in qr_leidos %}
-                <li><pre>{{ qr }}</pre></li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-
-    {% if resultado %}
-        <h4>Zapatos actualizados:</h4>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Referencia</th>
-                    <th>Modelo</th>
-                    <th>Talla</th>
-                    <th>Sexo</th>
-                    <th>Color</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for zapato in resultado %}
-                <tr>
-                    <td>{{ zapato.referencia }}</td>
-                    <td>{{ zapato.modelo }}</td>
-                    <td>{{ zapato.talla }}</td>
-                    <td>{{ zapato.get_sexo_display }}</td>
-                    <td>{{ zapato.color }}</td>
-                    <td>{{ zapato.estado }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+        {% if resultado %}
+            <h4 class="text-center">Zapatos actualizados:</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Referencia</th>
+                            <th>Modelo</th>
+                            <th>Talla</th>
+                            <th>Sexo</th>
+                            <th>Color</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for zapato in resultado %}
+                        <tr>
+                            <td>{{ zapato.referencia }}</td>
+                            <td>{{ zapato.modelo }}</td>
+                            <td>{{ zapato.talla }}</td>
+                            <td>{{ zapato.get_sexo_display }}</td>
+                            <td>{{ zapato.color }}</td>
+                            <td>{{ zapato.estado }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}
