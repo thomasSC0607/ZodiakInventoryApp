@@ -58,7 +58,7 @@ class Zapato(models.Model):
     talla = models.CharField(max_length=2, choices=TALLAS_CHOICES)
     sexo = models.CharField(max_length=1, choices=GENERO_CHOICES)
     color = models.CharField(max_length=10, choices=COLOR_CHOICES)
-    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='Pendiente') # El estado por defecto es pendiente
+    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='Pendientes') # El estado por defecto es pendientes
     requerimientos = models.TextField()
     observaciones = models.TextField(default='Sin observaciones', null=True, blank=True) # El campo observaciones es opcional    
     pedido = models.ForeignKey('Pedido', on_delete=models.CASCADE, null=True, blank=True) # Relación uno a muchos con la tabla Pedido
