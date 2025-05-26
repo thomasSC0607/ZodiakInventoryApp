@@ -581,3 +581,42 @@ def cargar_qr(request):
         'mensaje': mensaje,
         'qr_leidos': qr_leidos
     })
+
+@login_required
+def ver_stock(request):
+    zapatos = Zapato.objects.all()
+    
+    if request.method == 'POST':
+        filtros = {}
+        referencia = request.POST.get('referencia')
+        modelo = request.POST.get('modelo')
+        talla = request.POST.get('talla')
+        sexo = request.POST.getlist('sexo')
+        color = request.POST.get('color')
+        estado = request.POST.getlist('estado')
+        
+        if referencia:
+            filtros['referencia'] = referencia
+        if modelo:
+            filtros['modelo'] = modelo
+        if talla:
+            filtros['talla'] = talla
+        if sexo:
+            filtros['sexo__in'] = sexo
+        if color:
+            filtros['color'] = color
+        if estado:
+            filtros['estado__in'] = estado
+            
+        zapatos = Zapato.objects.filter(**filtros)
+    
+        # Para los selects, obtener valores únicos de la base de datos
+    context = {
+        'zapatos': zapatos,
+        'referencias': Zapato.objects.values_list('referencia', flat=True).distinct(),
+        'modelos': Zapato.objects.values_list('modelo', flat=True).distinct(),
+        'tallas': Zapato.objects.values_list('talla', flat=True).distinct(),
+        'colores': Zapato.objects.values_list('color', flat=True).distinct(),
+    }
+    return render(request, 'ver_stock.html', context)
+        

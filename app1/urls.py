@@ -10,6 +10,9 @@ urlpatterns = [
     path('landing/', landing_view, name='landing'),  
     path('logout/', logout_view, name='logout'), 
     
+    # Pagina para ver stock
+    path('ver_stock/', views.ver_stock, name='ver_stock'),
+    
     #Pagina para pedidos
     
     path('agregar_pedido/', views.agregar_pedido, name='agregar_pedido'),
