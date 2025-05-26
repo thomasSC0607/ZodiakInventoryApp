@@ -49,7 +49,7 @@
                 <a href="{% url 'ver_carrito' %}" class="btn btn-green me-2">Ver Carrito</a>
                 <a href="{% url 'ver_clientes' %}" class="btn btn-green me-2">Clientes</a>
                 <a href="{% url 'ver_pedidos' %}" class="btn btn-green me-2">Ver Pedidos</a>
-                <a href="#" class="btn btn-green me-2">Ver Stock</a>
+                <a href="{% url 'ver_stock' %}" class="btn btn-green me-2">Ver Stock</a>
                 <a href="{% url 'cargar_qr' %}" class="btn btn-green me-2">Cargar QR</a>
                 
                 {% if user.is_authenticated %}

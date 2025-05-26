@@ -16,6 +16,7 @@ import os
 import json
 import qrcode
 import cv2
+import re
 import numpy as np
 from pyzbar.pyzbar import decode
 from pdf2image import convert_from_bytes
@@ -189,7 +190,8 @@ def generar_codigo_qr(zapato):
         box_size=10,
         border=4,
     )
-    qr.add_data({
+    
+    data = {
         'referencia': zapato.referencia,
         'modelo': zapato.modelo,
         'talla': zapato.talla,
@@ -198,8 +200,10 @@ def generar_codigo_qr(zapato):
         'requerimientos': zapato.requerimientos,
         'observaciones': zapato.observaciones,
         'estado': zapato.estado,
-        'pedido': zapato.pedido,
-    })
+        # 'pedido': zapato.pedido,
+    }
+    
+    qr.add_data(json.dumps(data, ensure_ascii=False))  # Convierte los datos a JSON y los agrega al QR
     qr.make(fit=True)
     return qr.make_image(fill_color="black", back_color="white")
 
@@ -527,16 +531,20 @@ def cargar_qr(request):
             referencias_info = []
             for img in imagenes:
                 for qr in decode(img):
-                    data = qr.data.decode('utf-8')
+                    data = qr.data.decode('utf-8').strip()
+                    print("Contenido QR leído:", repr(data))  # <-- Esto te mostrará exactamente qué se está leyendo
                     qr_leidos.append(data)
+                    # Opcional: elimina caracteres no imprimibles
+                    data = re.sub(r'[^\x20-\x7E]+', '', data)
                     try:
                         # Reemplazar comillas simples con dobles
-                        info = json.loads(data.replace("'", '"'))
+                        info = json.loads(data)
                         referencia = info.get('referencia')
                         if referencia:
                             referencias_info.append(info)
                     except Exception as e:
                         print("Error leyendo QR:", e)
+                        print("Contenido problemático:", repr(data))
                         continue
 
             zapatos_actualizados = []
@@ -547,24 +555,25 @@ def cargar_qr(request):
                 sexo = str(info.get('sexo', '')).strip()
                 color = str(info.get('color', '')).strip()
                 print("Buscando zapato con:", referencia, modelo, talla, sexo, color)
-                zapato = Zapato.objects.filter(
+                zapatos = Zapato.objects.filter(
                     referencia__iexact=referencia,
                     modelo__iexact=modelo,
                     talla__iexact=talla,
                     sexo__iexact=sexo,
                     color__iexact=color
-                ).first()
-                if zapato:
-                    print("¡Zapato encontrado y actualizado!")
-                    zapato.estado = 'Bodega'
-                    zapato.save()
-                    zapatos_actualizados.append(zapato)
-                    pedido = zapato.pedido
-                    if pedido:
-                        zapatos_pedido = Zapato.objects.filter(pedido=pedido)
-                        if all(z.estado == 'Bodega' for z in zapatos_pedido):
-                            pedido.estado = 'Completada'
-                            pedido.save()
+                )
+                if zapatos.exists():
+                    for zapato in zapatos:
+                        print("¡Zapato encontrado y actualizado!")
+                        zapato.estado = 'Bodega'
+                        zapato.save()
+                        zapatos_actualizados.append(zapato)
+                        pedido = zapato.pedido
+                        if pedido:
+                            zapatos_pedido = Zapato.objects.filter(pedido=pedido)
+                            if all(z.estado == 'Bodega' for z in zapatos_pedido):
+                                pedido.estado = 'Completada'
+                                pedido.save()
                 else:
                     print("No se encontró el zapato.")
 
@@ -585,7 +594,7 @@ def cargar_qr(request):
 @login_required
 def ver_stock(request):
     zapatos = Zapato.objects.all()
-    
+    total = 0
     if request.method == 'POST':
         filtros = {}
         referencia = request.POST.get('referencia')
@@ -609,7 +618,9 @@ def ver_stock(request):
             filtros['estado__in'] = estado
             
         zapatos = Zapato.objects.filter(**filtros)
-    
+
+    # Calcular el total de zapatos
+    total = zapatos.count()
         # Para los selects, obtener valores únicos de la base de datos
     context = {
         'zapatos': zapatos,
@@ -617,6 +628,7 @@ def ver_stock(request):
         'modelos': Zapato.objects.values_list('modelo', flat=True).distinct(),
         'tallas': Zapato.objects.values_list('talla', flat=True).distinct(),
         'colores': Zapato.objects.values_list('color', flat=True).distinct(),
+        'total': total,
     }
     return render(request, 'ver_stock.html', context)
         
