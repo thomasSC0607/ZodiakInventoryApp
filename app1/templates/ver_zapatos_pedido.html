@@ -8,7 +8,7 @@
     <table class="table table-striped mt-4">
         <thead>
             <tr>
-                <th>#</th>
+                <th>Id</th>
                 <th>Modelo</th>
                 <th>Talla</th>
                 <th>Color</th>
@@ -19,7 +19,7 @@
         <tbody>
             {% for zapato in zapatos %}
             <tr>
-                <td>{{ forloop.counter }}</td>
+                <td>{{ zapato.id }}</td>
                 <td>{{ zapato.modelo }}</td>
                 <td>{{ zapato.talla }}</td>
                 <td>{{ zapato.color }}</td>
